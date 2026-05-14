@@ -3,12 +3,8 @@
   "name": "smart-forms-builder",
   "compatibility_date": "2026-04-13",
   "pages_build_output_dir": "./dist",
-  "compatibility_flags": ["nodejs_compat"],
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "smart-forms-production",
-      "database_id": "00000000-0000-0000-0000-000000000000"
-    }
-  ]
+  "compatibility_flags": ["nodejs_compat"]
+  // ملاحظة: D1 binding (DB) يُدار من لوحة Cloudflare Pages مباشرة على المشروع.
+  // الـ binding اسمه "DB" ويرتبط بقاعدة "smart-forms-production".
+  // لا نضع database_id هنا لتفادي failure أثناء النشر اليدوي - الإعدادات تُحفظ على المشروع نفسه.
 }

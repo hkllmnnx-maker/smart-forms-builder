@@ -11,11 +11,19 @@ const auth = new Hono<AppEnv>()
 /** Start OAuth flow */
 auth.get('/login', async (c) => {
   if (!c.env.GOOGLE_CLIENT_ID || !c.env.GOOGLE_CLIENT_SECRET) {
-    return c.html(renderConfigError(), 500)
+    return c.html(renderConfigError('oauth'), 500)
+  }
+  if (!c.env.DB) {
+    return c.html(renderConfigError('d1'), 500)
   }
   const state = randomToken(24)
   const redirectTo = c.req.query('next') || '/dashboard'
-  await saveOAuthState(c.env, state, redirectTo)
+  try {
+    await saveOAuthState(c.env, state, redirectTo)
+  } catch (e: any) {
+    console.error('saveOAuthState failed:', e.message)
+    return c.html(renderConfigError('d1-write'), 500)
+  }
   setOAuthStateCookie(c, state)
 
   const redirectUri = c.env.GOOGLE_REDIRECT_URI || `${getOrigin(c)}/api/auth/callback`
@@ -121,12 +129,25 @@ function getOrigin(c: any): string {
   return `${url.protocol}//${url.host}`
 }
 
-function renderConfigError(): string {
+function renderConfigError(kind: 'oauth' | 'd1' | 'd1-write' = 'oauth'): string {
+  let title = 'إعداد OAuth غير مكتمل'
+  let body = `<p>يجب تعيين <code>GOOGLE_CLIENT_ID</code> و <code>GOOGLE_CLIENT_SECRET</code> في .dev.vars (محلياً) أو عبر wrangler secrets في الإنتاج.</p>
+  <p>راجع README.md للحصول على تعليمات إعداد Google Cloud Console.</p>`
+  if (kind === 'd1' || kind === 'd1-write') {
+    title = 'قاعدة البيانات (D1) غير مهيأة'
+    body = `<p>لم يتم ربط قاعدة بيانات Cloudflare D1 بالمشروع. يجب إنشاء قاعدة باسم <code>smart-forms-production</code> وربطها بالـ binding <code>DB</code> في إعدادات Pages.</p>
+  <p>خطوات الربط من لوحة Cloudflare:</p>
+  <ol style="line-height:1.9">
+    <li>افتح <strong>Workers &amp; Pages → D1 → Create database</strong> باسم <code>smart-forms-production</code>.</li>
+    <li>افتح مشروع <strong>smart-forms-builder → Settings → Bindings → Add → D1 database</strong>.</li>
+    <li>ضع اسم الـ Binding: <code>DB</code> واختر قاعدة <code>smart-forms-production</code>، احفظ لـ Production و Preview.</li>
+    <li>طبّق migrations من ملف <code>migrations/0001_initial_schema.sql</code> ثم أعد النشر.</li>
+  </ol>`
+  }
   return `<!doctype html><html dir="rtl" lang="ar"><body style="font-family:sans-serif;padding:24px;max-width:680px;margin:auto;background:#0b0b0f;color:#e7e7ea">
-  <h2>إعداد OAuth غير مكتمل</h2>
-  <p>يجب تعيين <code>GOOGLE_CLIENT_ID</code> و <code>GOOGLE_CLIENT_SECRET</code> في .dev.vars (محلياً) أو عبر wrangler secrets في الإنتاج.</p>
-  <p>راجع README.md للحصول على تعليمات إعداد Google Cloud Console.</p>
-  <a style="color:#a78bfa" href="/">العودة للرئيسية</a>
+  <h2>${title}</h2>
+  ${body}
+  <p><a style="color:#a78bfa" href="/">العودة للرئيسية</a></p>
   </body></html>`
 }
 
