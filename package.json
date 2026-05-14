@@ -1,20 +1,34 @@
 {
-  "name": "webapp",
+  "name": "smart-forms-builder",
   "type": "module",
+  "version": "1.0.0",
+  "description": "منشئ النماذج الذكي - AI-powered Google Forms generator",
   "scripts": {
     "dev": "vite",
+    "dev:sandbox": "wrangler pages dev dist --d1=smart-forms-production --local --ip 0.0.0.0 --port 3000",
     "build": "vite build",
-    "preview": "wrangler pages dev",
-    "deploy": "npm run build && wrangler pages deploy",
-    "cf-typegen": "wrangler types --env-interface CloudflareBindings"
+    "preview": "wrangler pages dev dist",
+    "deploy": "npm run build && wrangler pages deploy dist",
+    "deploy:prod": "npm run build && wrangler pages deploy dist --project-name smart-forms-builder",
+    "cf-typegen": "wrangler types --env-interface CloudflareBindings",
+    "clean-port": "fuser -k 3000/tcp 2>/dev/null || true",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:migrate:local": "wrangler d1 migrations apply smart-forms-production --local",
+    "db:migrate:prod": "wrangler d1 migrations apply smart-forms-production",
+    "db:seed": "wrangler d1 execute smart-forms-production --local --file=./seed.sql",
+    "db:reset": "rm -rf .wrangler/state/v3/d1 && npm run db:migrate:local"
   },
   "dependencies": {
+    "fflate": "^0.8.2",
     "hono": "^4.12.12"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260511.1",
     "@hono/vite-build": "^1.2.0",
     "@hono/vite-dev-server": "^0.18.2",
     "vite": "^6.3.5",
+    "vitest": "^2.1.9",
     "wrangler": "^4.4.0"
   }
 }
